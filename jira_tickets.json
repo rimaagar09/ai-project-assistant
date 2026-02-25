@@ -14,4 +14,825 @@
     "Solution-Consulting",
     "Vulnerability_Scan",
     "Webapp-CRM"
+  ],
+  "issues": [
+    {
+      "type": "Epic",
+      "summary": "User Authentication & Onboarding",
+      "description": "Complete user registration, login, and onboarding flow for the AI Project Assistant mobile app.",
+      "label": "authentication",
+      "priority": "High",
+      "stories": [
+        {
+          "type": "Story",
+          "summary": "As a user, I can register with email and password",
+          "description": "User can sign up using their email address and a secure password. Includes email verification flow.",
+          "priority": "High",
+          "storyPoints": 5,
+          "components": [
+            "MobileApp-CRM",
+            "Configurations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Design registration UI screen",
+              "priority": "High",
+              "components": [
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement email/password validation logic",
+              "priority": "High",
+              "components": [
+                "MobileApp-CRM",
+                "Configurations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Integrate email verification API",
+              "priority": "Medium",
+              "components": [
+                "Integrations",
+                "IP_inventory"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Write unit tests for registration flow",
+              "priority": "Medium",
+              "components": [
+                "BAU-QA"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can log in using Google or Apple SSO",
+          "description": "Support OAuth 2.0 single sign-on via Google and Apple for faster authentication.",
+          "priority": "High",
+          "storyPoints": 5,
+          "components": [
+            "MobileApp-CRM",
+            "Integrations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Integrate Google OAuth SDK",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "Vulnerability_Scan"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Integrate Apple Sign-In SDK",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "Vulnerability_Scan"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Handle SSO token storage securely",
+              "priority": "High",
+              "components": [
+                "Vulnerability_Scan"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Test SSO flows on iOS and Android",
+              "priority": "Medium",
+              "components": [
+                "BAU-QA",
+                "MobileApp-CRM"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a new user, I can complete an interactive onboarding tutorial",
+          "description": "Step-by-step onboarding that introduces the AI assistant features and collects user preferences.",
+          "priority": "Medium",
+          "storyPoints": 3,
+          "components": [
+            "MobileApp-CRM",
+            "Configurations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Design onboarding screens (3-5 slides)",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement swipe-based onboarding flow",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Save user preferences from onboarding",
+              "priority": "Medium",
+              "components": [
+                "Configurations"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Epic",
+      "summary": "AI-Powered Project Analysis",
+      "description": "Core AI engine for analyzing project requirements, code, and documentation to surface insights and recommendations.",
+      "label": "ai-analysis",
+      "priority": "High",
+      "stories": [
+        {
+          "type": "Story",
+          "summary": "As a user, I can upload project documents for AI analysis",
+          "description": "Support PDF, DOCX, TXT, and Markdown file uploads. AI extracts key requirements, risks, and action items.",
+          "priority": "High",
+          "storyPoints": 8,
+          "components": [
+            "Data-Ingestion",
+            "MobileApp-CRM"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Build file upload component (drag & drop + picker)",
+              "priority": "High",
+              "components": [
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement document parsing service (PDF/DOCX/MD)",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Integrate LLM API for document analysis",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "Integrations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Display structured analysis results in UI",
+              "priority": "High",
+              "components": [
+                "MobileApp-CRM",
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Handle large file uploads with progress indicator",
+              "priority": "Medium",
+              "components": [
+                "Data-Ingestion",
+                "IP_inventory"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can chat with AI about my project",
+          "description": "Conversational interface where users can ask questions about their project, get suggestions, and receive context-aware responses.",
+          "priority": "High",
+          "storyPoints": 8,
+          "components": [
+            "MobileApp-CRM",
+            "Data-Ingestion"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Design chat UI with message bubbles",
+              "priority": "High",
+              "components": [
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement real-time streaming AI responses",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "Integrations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Maintain conversation context/history",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "Configurations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Add suggested follow-up prompts",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Support code snippet rendering in chat",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM",
+                "Webapp-CRM"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can view an AI-generated project health dashboard",
+          "description": "Dashboard showing project risk score, completion estimates, blockers, and AI recommendations.",
+          "priority": "Medium",
+          "storyPoints": 5,
+          "components": [
+            "Webapp-CRM",
+            "Data-Ingestion"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Design health dashboard wireframes",
+              "priority": "Medium",
+              "components": [
+                "Webapp-CRM",
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Build risk score calculation engine",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "IP_inventory"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement dashboard charts and metrics",
+              "priority": "Medium",
+              "components": [
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Add drill-down for individual risk items",
+              "priority": "Low",
+              "components": [
+                "Webapp-CRM",
+                "BAU-QA"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Epic",
+      "summary": "Automated Documentation Generation",
+      "description": "AI-driven generation of technical documentation, README files, API docs, and release notes from project artifacts.",
+      "label": "documentation",
+      "priority": "High",
+      "stories": [
+        {
+          "type": "Story",
+          "summary": "As a user, I can auto-generate a README from my project structure",
+          "description": "AI scans project files and generates a professional README with sections for setup, usage, and contributing.",
+          "priority": "High",
+          "storyPoints": 5,
+          "components": [
+            "Solution-Consulting",
+            "Data-Ingestion"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Build project structure scanner",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement README template engine",
+              "priority": "High",
+              "components": [
+                "Solution-Consulting"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Add markdown preview renderer",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM",
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Enable export to file or GitHub push",
+              "priority": "Medium",
+              "components": [
+                "Integrations",
+                "Solution-Consulting"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can generate API documentation from code",
+          "description": "Parse source code comments and function signatures to auto-generate structured API reference documentation.",
+          "priority": "Medium",
+          "storyPoints": 8,
+          "components": [
+            "Solution-Consulting",
+            "IP_inventory"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Implement code comment parser (JSDoc, PyDoc)",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "Solution-Consulting"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Generate OpenAPI/Swagger spec from code",
+              "priority": "High",
+              "components": [
+                "IP_inventory",
+                "Solution-Consulting"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Render interactive API docs in-app",
+              "priority": "Medium",
+              "components": [
+                "Webapp-CRM",
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Export docs as HTML or PDF",
+              "priority": "Low",
+              "components": [
+                "Solution-Consulting"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can generate release notes from git commits",
+          "description": "AI parses commit history and PR descriptions to generate human-readable release notes.",
+          "priority": "Medium",
+          "storyPoints": 5,
+          "components": [
+            "Integrations",
+            "Solution-Consulting"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Integrate GitHub API for commit/PR data",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "IP_inventory"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Build AI prompt for release note generation",
+              "priority": "High",
+              "components": [
+                "Solution-Consulting",
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Allow user edits before finalizing notes",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM",
+                "Solution-Consulting"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Epic",
+      "summary": "Automated Testing & Debugging",
+      "description": "AI-assisted test generation, bug detection, and debugging support integrated directly into the developer workflow.",
+      "label": "testing-debugging",
+      "priority": "High",
+      "stories": [
+        {
+          "type": "Story",
+          "summary": "As a developer, I can auto-generate unit tests from my code",
+          "description": "AI analyzes functions and classes to generate meaningful unit tests with edge cases.",
+          "priority": "High",
+          "storyPoints": 8,
+          "components": [
+            "BAU-QA",
+            "Data-Ingestion"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Build code ingestion and parsing module",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement test generation prompt templates",
+              "priority": "High",
+              "components": [
+                "BAU-QA",
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Support Jest, PyTest, and JUnit frameworks",
+              "priority": "High",
+              "components": [
+                "BAU-QA"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Allow user to accept/reject generated tests",
+              "priority": "Medium",
+              "components": [
+                "BAU-QA",
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Write integration tests for test generator",
+              "priority": "Medium",
+              "components": [
+                "BAU-QA"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a developer, I can get AI-powered debugging suggestions",
+          "description": "Paste error logs or stack traces and receive AI-generated root cause analysis and fix suggestions.",
+          "priority": "High",
+          "storyPoints": 5,
+          "components": [
+            "BAU-QA",
+            "Webapp-CRM"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Build error log input interface",
+              "priority": "High",
+              "components": [
+                "MobileApp-CRM",
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement stack trace parser",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "BAU-QA"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Generate fix suggestions via LLM",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "Integrations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Show confidence score for each suggestion",
+              "priority": "Medium",
+              "components": [
+                "BAU-QA",
+                "Webapp-CRM"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Epic",
+      "summary": "Task Management & Jira Integration",
+      "description": "AI-powered task creation, prioritization, and two-way sync with Jira for seamless project management.",
+      "label": "task-management",
+      "priority": "High",
+      "stories": [
+        {
+          "type": "Story",
+          "summary": "As a user, I can auto-generate Jira tickets from a BRD",
+          "description": "AI reads a BRD document and creates structured Epics, Stories, and Sub-tasks directly in Jira.",
+          "priority": "High",
+          "storyPoints": 8,
+          "components": [
+            "Integrations",
+            "Solution-Consulting"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Build BRD parser to extract requirements",
+              "priority": "High",
+              "components": [
+                "Data-Ingestion",
+                "Solution-Consulting"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Map BRD sections to Jira issue types",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "Solution-Consulting"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Integrate Jira REST API for ticket creation",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "IP_inventory"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Show preview of tickets before creating",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM",
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Handle Jira API errors and retries",
+              "priority": "Medium",
+              "components": [
+                "Integrations",
+                "BAU-QA"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can view and manage my Jira board inside the app",
+          "description": "Embedded Jira board view with drag-and-drop sprint management and AI-suggested prioritization.",
+          "priority": "Medium",
+          "storyPoints": 8,
+          "components": [
+            "Webapp-CRM",
+            "Integrations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Fetch and display Jira board via REST API",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement drag-and-drop ticket status update",
+              "priority": "Medium",
+              "components": [
+                "Webapp-CRM",
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Add AI sprint prioritization suggestions",
+              "priority": "Medium",
+              "components": [
+                "SI-Partner",
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Sync changes back to Jira in real-time",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "IP_inventory"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can get AI-driven sprint planning recommendations",
+          "description": "AI analyzes team velocity, ticket complexity, and deadlines to recommend optimal sprint composition.",
+          "priority": "Medium",
+          "storyPoints": 5,
+          "components": [
+            "SI-Partner",
+            "Integrations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Fetch historical sprint velocity from Jira",
+              "priority": "Medium",
+              "components": [
+                "Integrations",
+                "IP_inventory"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Build sprint recommendation algorithm",
+              "priority": "High",
+              "components": [
+                "SI-Partner",
+                "Data-Ingestion"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Display recommendations with reasoning",
+              "priority": "Medium",
+              "components": [
+                "Webapp-CRM",
+                "SI-Partner"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Epic",
+      "summary": "Notifications & Collaboration",
+      "description": "Real-time push notifications, team collaboration features, and activity feeds for project stakeholders.",
+      "label": "collaboration",
+      "priority": "Medium",
+      "stories": [
+        {
+          "type": "Story",
+          "summary": "As a user, I receive push notifications for project updates",
+          "description": "Push notifications for critical alerts: new AI analysis complete, ticket status changes, upcoming deadlines.",
+          "priority": "Medium",
+          "storyPoints": 3,
+          "components": [
+            "MobileApp-CRM",
+            "Configurations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Integrate Firebase Cloud Messaging (FCM)",
+              "priority": "High",
+              "components": [
+                "Integrations",
+                "MobileApp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Build notification preference settings screen",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM",
+                "Configurations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Test notifications on iOS and Android",
+              "priority": "Medium",
+              "components": [
+                "BAU-QA",
+                "MobileApp-CRM"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Story",
+          "summary": "As a user, I can invite team members to a project workspace",
+          "description": "Team workspace with role-based access (Admin, Editor, Viewer) and shared AI analysis history.",
+          "priority": "Medium",
+          "storyPoints": 5,
+          "components": [
+            "Configurations"
+          ],
+          "subtasks": [
+            {
+              "type": "Sub-task",
+              "summary": "Design team invitation flow",
+              "priority": "Medium",
+              "components": [
+                "MobileApp-CRM",
+                "Webapp-CRM"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Implement role-based access control (RBAC)",
+              "priority": "High",
+              "components": [
+                "Vulnerability_Scan"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Build shared workspace activity feed",
+              "priority": "Medium",
+              "components": [
+                "Webapp-CRM",
+                "Configurations"
+              ]
+            },
+            {
+              "type": "Sub-task",
+              "summary": "Send email invitations via SendGrid",
+              "priority": "Medium",
+              "components": [
+                "Integrations"
+              ]
+            }
+          ]
+        }
+      ]
+    }
   ]
+}
