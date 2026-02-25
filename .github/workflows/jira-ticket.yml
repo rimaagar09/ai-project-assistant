@@ -1,34 +1,139 @@
-name: Create Jira Tickets from BRD
+name: Create Jira Tickets from JSON
 
 on:
   push:
     paths:
-      - 'docs/BRD.md'   # trigger when BRD is updated
+      - 'jira_tickets.json'
 
 jobs:
   create-tickets:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
 
-      - name: Create Jira Issue
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Create Jira Issues from JSON
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
-          curl -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
-            -H "Authorization: Basic $(echo -n $JIRA_USER_EMAIL:$JIRA_API_TOKEN | base64)" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "fields": {
-                "project": { "key": "AI_POC" },
-                "summary": "BRD Review: Feature X",
-                "description": {
-                  "type": "doc",
-                  "version": 1,
-                  "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Auto-created from BRD update"}]}]
-                },
-                "issuetype": { "name": "Story" }
-              }
-            }'
+
+          PROJECT_KEY=$(jq -r '.project.key' jira_tickets.json)
+
+          AUTH=$(echo -n "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" | base64)
+
+          jq -c '.issues[]' jira_tickets.json | while read epic; do
+
+            EPIC_TYPE=$(echo $epic | jq -r '.type')
+            EPIC_SUMMARY=$(echo $epic | jq -r '.summary')
+            EPIC_DESC=$(echo $epic | jq -r '.description')
+            EPIC_PRIORITY=$(echo $epic | jq -r '.priority')
+
+            echo "Creating Epic: $EPIC_SUMMARY"
+
+            EPIC_RESPONSE=$(curl -s -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
+              -H "Authorization: Basic $AUTH" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"fields\": {
+                  \"project\": { \"key\": \"$PROJECT_KEY\" },
+                  \"summary\": \"$EPIC_SUMMARY\",
+                  \"description\": {
+                    \"type\": \"doc\",
+                    \"version\": 1,
+                    \"content\": [{
+                      \"type\": \"paragraph\",
+                      \"content\": [{
+                        \"type\": \"text\",
+                        \"text\": \"$EPIC_DESC\"
+                      }]
+                    }]
+                  },
+                  \"issuetype\": { \"name\": \"Epic\" },
+                  \"priority\": { \"name\": \"$EPIC_PRIORITY\" }
+                }
+              }")
+
+            EPIC_KEY=$(echo $EPIC_RESPONSE | jq -r '.key')
+
+            echo "Created Epic: $EPIC_KEY"
+
+            # Create Stories
+            echo $epic | jq -c '.stories[]' | while read story; do
+
+              STORY_SUMMARY=$(echo $story | jq -r '.summary')
+              STORY_DESC=$(echo $story | jq -r '.description')
+              STORY_PRIORITY=$(echo $story | jq -r '.priority')
+              STORY_POINTS=$(echo $story | jq -r '.storyPoints')
+
+              COMPONENTS=$(echo $story | jq -r '.components[]?' | \
+                awk '{print "{\"name\":\""$0"\"}"}' | \
+                jq -s '.')
+
+              echo "  Creating Story: $STORY_SUMMARY"
+
+              STORY_RESPONSE=$(curl -s -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
+                -H "Authorization: Basic $AUTH" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"fields\": {
+                    \"project\": { \"key\": \"$PROJECT_KEY\" },
+                    \"summary\": \"$STORY_SUMMARY\",
+                    \"description\": {
+                      \"type\": \"doc\",
+                      \"version\": 1,
+                      \"content\": [{
+                        \"type\": \"paragraph\",
+                        \"content\": [{
+                          \"type\": \"text\",
+                          \"text\": \"$STORY_DESC\"
+                        }]
+                      }]
+                    },
+                    \"issuetype\": { \"name\": \"Story\" },
+                    \"priority\": { \"name\": \"$STORY_PRIORITY\" },
+                    \"components\": $COMPONENTS,
+                    \"parent\": { \"key\": \"$EPIC_KEY\" },
+                    \"customfield_10016\": $STORY_POINTS
+                  }
+                }")
+
+              STORY_KEY=$(echo $STORY_RESPONSE | jq -r '.key')
+
+              echo "  Created Story: $STORY_KEY"
+
+              # Create Subtasks
+              echo $story | jq -c '.subtasks[]?' | while read subtask; do
+
+                SUB_SUMMARY=$(echo $subtask | jq -r '.summary')
+                SUB_PRIORITY=$(echo $subtask | jq -r '.priority')
+
+                SUB_COMPONENTS=$(echo $subtask | jq -r '.components[]?' | \
+                  awk '{print "{\"name\":\""$0"\"}"}' | \
+                  jq -s '.')
+
+                echo "    Creating Subtask: $SUB_SUMMARY"
+
+                curl -s -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
+                  -H "Authorization: Basic $AUTH" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"fields\": {
+                      \"project\": { \"key\": \"$PROJECT_KEY\" },
+                      \"summary\": \"$SUB_SUMMARY\",
+                      \"issuetype\": { \"name\": \"Sub-task\" },
+                      \"priority\": { \"name\": \"$SUB_PRIORITY\" },
+                      \"parent\": { \"key\": \"$STORY_KEY\" },
+                      \"components\": $SUB_COMPONENTS
+                    }
+                  }"
+
+              
+
+            done
+
+          done
