@@ -1,0 +1,17 @@
+{
+  "project": {
+    "key": "APP",
+    "name": "AI Project Assistant"
+  },
+  "components": [
+    "BAU-QA",
+    "Configurations",
+    "Data-Ingestion",
+    "Integrations",
+    "IP_inventory",
+    "MobileApp-CRM",
+    "SI-Partner",
+    "Solution-Consulting",
+    "Vulnerability_Scan",
+    "Webapp-CRM"
+  ]
