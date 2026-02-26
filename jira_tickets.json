@@ -1,7 +1,7 @@
 {
   "project": {
-    "key": "APP",
-    "name": "AI Project Assistant"
+    "key": "AI_POC",
+    "name": "AI_POC"
   },
   "components": [
     "BAU-QA",
