@@ -45,6 +45,7 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
           node --input-type=commonjs << 'EOF'
+          (async () => {
           const axios = require('axios');
           const fs = require('fs');
           const JIRA_BASE_URL = process.env.JIRA_BASE_URL.replace(/\/$/, '');
@@ -102,6 +103,7 @@ jobs:
           console.log('\nDone! Epics: ' + epicCount + ', Stories: ' + storyCount + ', Sub-tasks: ' + subtaskCount);
           console.log('Total: ' + (epicCount + storyCount + subtaskCount) + ' issues');
           fs.writeFileSync('jira_creation_results.json', JSON.stringify(results, null, 2));
+          })();
           EOF
 
       - name: Upload Results Artifact
