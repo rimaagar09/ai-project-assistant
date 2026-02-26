@@ -1,7 +1,7 @@
 {
   "project": {
-    "key": "AI_POC",
-    "name": "AI_POC"
+    "key": "CJ",
+    "name": "CapAI - Jira"
   },
   "components": [
     "BAU-QA",
