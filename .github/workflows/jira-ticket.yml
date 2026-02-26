@@ -1,139 +1,107 @@
-name: Create Jira Tickets from JSON
+name: Create Jira Tickets from BRD
 
 on:
   push:
     paths:
       - 'jira_tickets.json'
+      - 'docs/BRD.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run - preview without creating'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
-  create-tickets:
+  create-jira-tickets:
+    name: Create Jira Epics, Stories & Sub-tasks
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Create Jira Issues from JSON
+      - name: Install Dependencies
+        run: npm install axios
+
+      - name: Validate Jira Secrets
+        run: |
+          if [ -z "${{ secrets.JIRA_BASE_URL }}" ]; then echo "JIRA_BASE_URL not set" && exit 1; fi
+          if [ -z "${{ secrets.JIRA_USER_EMAIL }}" ]; then echo "JIRA_USER_EMAIL not set" && exit 1; fi
+          if [ -z "${{ secrets.JIRA_API_TOKEN }}" ]; then echo "JIRA_API_TOKEN not set" && exit 1; fi
+          echo "All Jira secrets configured"
+
+      - name: Create Jira Tickets from BRD
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
+          node << 'EOF'
+          const axios = require('axios');
+          const fs = require('fs');
+          const JIRA_BASE_URL = process.env.JIRA_BASE_URL.replace(/\/$/, '');
+          const EMAIL = process.env.JIRA_USER_EMAIL;
+          const TOKEN = process.env.JIRA_API_TOKEN;
+          const DRY_RUN = process.env.DRY_RUN === 'true';
+          const AUTH = Buffer.from(EMAIL + ':' + TOKEN).toString('base64');
+          const headers = { 'Authorization': 'Basic ' + AUTH, 'Content-Type': 'application/json', 'Accept': 'application/json' };
+          const brd = JSON.parse(fs.readFileSync('jira_tickets.json', 'utf8'));
+          const PROJECT_KEY = brd.project.key;
+          console.log('Project: ' + brd.project.name + ' (' + PROJECT_KEY + ')');
+          console.log('Jira: ' + JIRA_BASE_URL);
+          console.log('Dry Run: ' + DRY_RUN);
+          async function createIssue(payload) {
+            if (DRY_RUN) { console.log('[DRY] ' + payload.fields.summary); return { id: 'DRY', key: PROJECT_KEY + '-DRY' }; }
+            try { const res = await axios.post(JIRA_BASE_URL + '/rest/api/3/issue', payload, { headers }); return res.data; }
+            catch (err) { console.error('Failed: ' + JSON.stringify(err.response && err.response.data && err.response.data.errors || err.message)); return null; }
+          }
+          function buildDescription(text) { return { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: text }] }] }; }
+          function buildComponents(names) { return (names || []).map(function(name) { return { name: name }; }); }
+          let epicCount = 0, storyCount = 0, subtaskCount = 0;
+          const results = [];
+          for (const epic of brd.issues) {
+            console.log('\nEPIC: ' + epic.summary);
+            const epicIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: epic.summary, description: buildDescription(epic.description), issuetype: { name: 'Epic' }, priority: { name: epic.priority }, labels: [epic.label], customfield_10011: epic.summary } });
+            if (!epicIssue) continue;
+            epicCount++;
+            console.log('  Created: ' + epicIssue.key);
+            const epicResult = { epic: epicIssue.key, stories: [] };
+            for (const story of (epic.stories || [])) {
+              const storyComps = story.components || [];
+              console.log('  STORY: ' + story.summary + ' [Components: ' + storyComps.join(', ') + ']');
+              const storyIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: story.summary, description: buildDescription(story.description), issuetype: { name: 'Story' }, priority: { name: story.priority }, customfield_10014: epicIssue.key, customfield_10016: story.storyPoints || 3, components: buildComponents(storyComps) } });
+              if (!storyIssue) continue;
+              storyCount++;
+              console.log('    Created: ' + storyIssue.key);
+              const storyResult = { story: storyIssue.key, subtasks: [] };
+              for (const sub of (story.subtasks || [])) {
+                const subComps = sub.components || storyComps;
+                console.log('    SUB: ' + sub.summary + ' [Components: ' + subComps.join(', ') + ']');
+                const subIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: sub.summary, issuetype: { name: 'Sub-task' }, priority: { name: sub.priority }, parent: { key: storyIssue.key }, components: buildComponents(subComps) } });
+                if (!subIssue) continue;
+                subtaskCount++;
+                storyResult.subtasks.push(subIssue.key);
+              }
+              epicResult.stories.push(storyResult);
+            }
+            results.push(epicResult);
+          }
+          console.log('\nDone! Epics: ' + epicCount + ', Stories: ' + storyCount + ', Sub-tasks: ' + subtaskCount);
+          fs.writeFileSync('jira_creation_results.json', JSON.stringify(results, null, 2));
+          EOF
 
-          PROJECT_KEY=$(jq -r '.project.key' jira_tickets.json)
-
-          AUTH=$(echo -n "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" | base64)
-
-          jq -c '.issues[]' jira_tickets.json | while read epic; do
-
-            EPIC_TYPE=$(echo $epic | jq -r '.type')
-            EPIC_SUMMARY=$(echo $epic | jq -r '.summary')
-            EPIC_DESC=$(echo $epic | jq -r '.description')
-            EPIC_PRIORITY=$(echo $epic | jq -r '.priority')
-
-            echo "Creating Epic: $EPIC_SUMMARY"
-
-            EPIC_RESPONSE=$(curl -s -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
-              -H "Authorization: Basic $AUTH" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"fields\": {
-                  \"project\": { \"key\": \"$PROJECT_KEY\" },
-                  \"summary\": \"$EPIC_SUMMARY\",
-                  \"description\": {
-                    \"type\": \"doc\",
-                    \"version\": 1,
-                    \"content\": [{
-                      \"type\": \"paragraph\",
-                      \"content\": [{
-                        \"type\": \"text\",
-                        \"text\": \"$EPIC_DESC\"
-                      }]
-                    }]
-                  },
-                  \"issuetype\": { \"name\": \"Epic\" },
-                  \"priority\": { \"name\": \"$EPIC_PRIORITY\" }
-                }
-              }")
-
-            EPIC_KEY=$(echo $EPIC_RESPONSE | jq -r '.key')
-
-            echo "Created Epic: $EPIC_KEY"
-
-            # Create Stories
-            echo $epic | jq -c '.stories[]' | while read story; do
-
-              STORY_SUMMARY=$(echo $story | jq -r '.summary')
-              STORY_DESC=$(echo $story | jq -r '.description')
-              STORY_PRIORITY=$(echo $story | jq -r '.priority')
-              STORY_POINTS=$(echo $story | jq -r '.storyPoints')
-
-              COMPONENTS=$(echo $story | jq -r '.components[]?' | \
-                awk '{print "{\"name\":\""$0"\"}"}' | \
-                jq -s '.')
-
-              echo "  Creating Story: $STORY_SUMMARY"
-
-              STORY_RESPONSE=$(curl -s -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
-                -H "Authorization: Basic $AUTH" \
-                -H "Content-Type: application/json" \
-                -d "{
-                  \"fields\": {
-                    \"project\": { \"key\": \"$PROJECT_KEY\" },
-                    \"summary\": \"$STORY_SUMMARY\",
-                    \"description\": {
-                      \"type\": \"doc\",
-                      \"version\": 1,
-                      \"content\": [{
-                        \"type\": \"paragraph\",
-                        \"content\": [{
-                          \"type\": \"text\",
-                          \"text\": \"$STORY_DESC\"
-                        }]
-                      }]
-                    },
-                    \"issuetype\": { \"name\": \"Story\" },
-                    \"priority\": { \"name\": \"$STORY_PRIORITY\" },
-                    \"components\": $COMPONENTS,
-                    \"parent\": { \"key\": \"$EPIC_KEY\" },
-                    \"customfield_10016\": $STORY_POINTS
-                  }
-                }")
-
-              STORY_KEY=$(echo $STORY_RESPONSE | jq -r '.key')
-
-              echo "  Created Story: $STORY_KEY"
-
-              # Create Subtasks
-              echo $story | jq -c '.subtasks[]?' | while read subtask; do
-
-                SUB_SUMMARY=$(echo $subtask | jq -r '.summary')
-                SUB_PRIORITY=$(echo $subtask | jq -r '.priority')
-
-                SUB_COMPONENTS=$(echo $subtask | jq -r '.components[]?' | \
-                  awk '{print "{\"name\":\""$0"\"}"}' | \
-                  jq -s '.')
-
-                echo "    Creating Subtask: $SUB_SUMMARY"
-
-                curl -s -X POST "$JIRA_BASE_URL/rest/api/3/issue" \
-                  -H "Authorization: Basic $AUTH" \
-                  -H "Content-Type: application/json" \
-                  -d "{
-                    \"fields\": {
-                      \"project\": { \"key\": \"$PROJECT_KEY\" },
-                      \"summary\": \"$SUB_SUMMARY\",
-                      \"issuetype\": { \"name\": \"Sub-task\" },
-                      \"priority\": { \"name\": \"$SUB_PRIORITY\" },
-                      \"parent\": { \"key\": \"$STORY_KEY\" },
-                      \"components\": $SUB_COMPONENTS
-                    }
-                  }"
-
-              
-
-            done
-
-          done
+      - name: Upload Results Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jira-ticket-creation-results
+          path: jira_creation_results.json
+          retention-days: 30
