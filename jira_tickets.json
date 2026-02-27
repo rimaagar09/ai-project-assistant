@@ -1,8 +1,7 @@
 {
   "project": {
     "key": "PSV",
-    "name": "JiraBoardTesr"
-  },
+      },
   "components": [
     "BAU-QA",
     "Configurations",
