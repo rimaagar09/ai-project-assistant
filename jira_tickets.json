@@ -1,7 +1,7 @@
 {
   "project": {
-    "key": "ATP",
-    "name": "CapAI - Jira"
+    "key": "SSP",
+    "name": "SSPToken"
   },
   "components": [
     "BAU-QA",
