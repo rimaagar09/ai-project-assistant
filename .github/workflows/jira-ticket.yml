@@ -44,67 +44,79 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          node --input-type=commonjs << 'EOF'
+          node --input-type=commonjs << 'SCRIPT'
           (async () => {
-          const axios = require('axios');
-          const fs = require('fs');
-          const JIRA_BASE_URL = process.env.JIRA_BASE_URL.replace(/\/$/, '');
-          const EMAIL = process.env.JIRA_USER_EMAIL;
-          const TOKEN = process.env.JIRA_API_TOKEN;
-          const DRY_RUN = process.env.DRY_RUN === 'true';
-          const AUTH = Buffer.from(EMAIL + ':' + TOKEN).toString('base64');
-          const headers = { 'Authorization': 'Basic ' + AUTH, 'Content-Type': 'application/json', 'Accept': 'application/json' };
-          const brd = JSON.parse(fs.readFileSync('jira_tickets.json', 'utf8'));
-          const PROJECT_KEY = brd.project.key;
-          console.log('Project: ' + brd.project.name + ' (' + PROJECT_KEY + ')');
-          console.log('Jira: ' + JIRA_BASE_URL);
-          console.log('Dry Run: ' + DRY_RUN);
-          async function createIssue(payload) {
-            if (DRY_RUN) { console.log('[DRY] ' + payload.fields.summary); return { id: 'DRY', key: PROJECT_KEY + '-DRY' }; }
-            try {
-              const res = await axios.post(JIRA_BASE_URL + '/rest/api/3/issue', payload, { headers });
-              return res.data;
-            } catch (err) {
-              console.error('Failed: ' + JSON.stringify(err.response && err.response.data && err.response.data.errors || err.message));
-              return null;
-            }
-          }
-          function buildDesc(text) { return { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: text }] }] }; }
-          function buildComponents(names) { return (names || []).map(function(n) { return { name: n }; }); }
-          let epicCount = 0, storyCount = 0, subtaskCount = 0;
-          const results = [];
-          for (const epic of brd.issues) {
-            console.log('\nEPIC: ' + epic.summary);
-            const epicIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: epic.summary, description: buildDesc(epic.description), issuetype: { name: 'Epic' }, priority: { name: epic.priority }, labels: [epic.label], customfield_10011: epic.summary } });
-            if (!epicIssue) continue;
-            epicCount++;
-            console.log('  Created: ' + epicIssue.key);
-            const epicResult = { epic: epicIssue.key, stories: [] };
-            for (const story of (epic.stories || [])) {
-              const storyComps = story.components || [];
-              console.log('  STORY: ' + story.summary + ' [' + storyComps.join(', ') + ']');
-              const storyIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: story.summary, description: buildDesc(story.description), issuetype: { name: 'Story' }, priority: { name: story.priority }, customfield_10014: epicIssue.key, customfield_10016: story.storyPoints || 3, components: buildComponents(storyComps) } });
-              if (!storyIssue) continue;
-              storyCount++;
-              console.log('    Created: ' + storyIssue.key);
-              const storyResult = { story: storyIssue.key, subtasks: [] };
-              for (const sub of (story.subtasks || [])) {
-                const subComps = sub.components || storyComps;
-                console.log('    SUB: ' + sub.summary + ' [' + subComps.join(', ') + ']');
-                const subIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: sub.summary, issuetype: { name: 'Sub-task' }, priority: { name: sub.priority }, parent: { key: storyIssue.key }, components: buildComponents(subComps) } });
-                if (!subIssue) continue;
-                subtaskCount++;
-                storyResult.subtasks.push(subIssue.key);
+            const axios = require('axios');
+            const fs = require('fs');
+            const JIRA_BASE_URL = process.env.JIRA_BASE_URL.replace(/\/$/, '');
+            const EMAIL = process.env.JIRA_USER_EMAIL;
+            const TOKEN = process.env.JIRA_API_TOKEN;
+            const DRY_RUN = process.env.DRY_RUN === 'true';
+            const AUTH = Buffer.from(EMAIL + ':' + TOKEN).toString('base64');
+            const headers = { 'Authorization': 'Basic ' + AUTH, 'Content-Type': 'application/json', 'Accept': 'application/json' };
+            const brd = JSON.parse(fs.readFileSync('jira_tickets.json', 'utf8'));
+            const PROJECT_KEY = brd.project.key;
+            console.log('Project: ' + brd.project.name + ' (' + PROJECT_KEY + ')');
+            console.log('Jira: ' + JIRA_BASE_URL);
+            console.log('Dry Run: ' + DRY_RUN);
+
+            async function createIssue(payload) {
+              if (DRY_RUN) { console.log('[DRY] ' + payload.fields.summary); return { id: 'DRY', key: PROJECT_KEY + '-DRY' }; }
+              try {
+                const res = await axios.post(JIRA_BASE_URL + '/rest/api/3/issue', payload, { headers });
+                const data = res.data;
+                if (!data || !data.key) { console.error('No key in response: ' + JSON.stringify(data)); return null; }
+                return data;
+              } catch (err) {
+                const errData = err.response && err.response.data;
+                console.error('FAILED [' + (err.response && err.response.status) + ']: ' + payload.fields.summary);
+                console.error('Errors: ' + JSON.stringify((errData && errData.errors) || err.message));
+                return null;
               }
-              epicResult.stories.push(storyResult);
             }
-            results.push(epicResult);
-          }
-          console.log('\nDone! Epics: ' + epicCount + ', Stories: ' + storyCount + ', Sub-tasks: ' + subtaskCount);
-          console.log('Total: ' + (epicCount + storyCount + subtaskCount) + ' issues');
-          fs.writeFileSync('jira_creation_results.json', JSON.stringify(results, null, 2));
+
+            function buildDesc(text) { return { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: text || '' }] }] }; }
+            function buildComponents(names) { return (names || []).map(function(n) { return { name: n }; }); }
+
+            let epicCount = 0, storyCount = 0, subtaskCount = 0;
+            const results = [];
+
+            for (const epic of brd.issues) {
+              console.log('\nEPIC: ' + epic.summary);
+              const epicIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: epic.summary, description: buildDesc(epic.description), issuetype: { name: 'Epic' }, priority: { name: epic.priority }, labels: [epic.label] } });
+              if (!epicIssue) { console.log('  SKIPPED'); continue; }
+              epicCount++;
+              console.log('  Created: ' + epicIssue.key);
+              const epicResult = { epic: epicIssue.key, stories: [] };
+
+              for (const story of (epic.stories || [])) {
+                const storyComps = story.components || [];
+                console.log('  STORY: ' + story.summary + ' [' + storyComps.join(', ') + ']');
+                const storyIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: story.summary, description: buildDesc(story.description), issuetype: { name: 'Story' }, priority: { name: story.priority }, customfield_10014: epicIssue.key, components: buildComponents(storyComps) } });
+                if (!storyIssue) { console.log('    SKIPPED'); continue; }
+                storyCount++;
+                console.log('    Created: ' + storyIssue.key);
+                const storyResult = { story: storyIssue.key, subtasks: [] };
+
+                for (const sub of (story.subtasks || [])) {
+                  const subComps = sub.components || storyComps;
+                  console.log('    SUB: ' + sub.summary + ' [' + subComps.join(', ') + ']');
+                  const subIssue = await createIssue({ fields: { project: { key: PROJECT_KEY }, summary: sub.summary, issuetype: { name: 'Sub-task' }, priority: { name: sub.priority }, parent: { key: storyIssue.key }, components: buildComponents(subComps) } });
+                  if (!subIssue) { console.log('      SKIPPED'); continue; }
+                  subtaskCount++;
+                  console.log('      Created: ' + subIssue.key);
+                  storyResult.subtasks.push(subIssue.key);
+                }
+                epicResult.stories.push(storyResult);
+              }
+              results.push(epicResult);
+            }
+
+            console.log('\nDone! Epics: ' + epicCount + ', Stories: ' + storyCount + ', Sub-tasks: ' + subtaskCount);
+            console.log('Total: ' + (epicCount + storyCount + subtaskCount) + ' issues');
+            fs.writeFileSync('jira_creation_results.json', JSON.stringify(results, null, 2));
           })();
-          EOF
+          SCRIPT
 
       - name: Upload Results Artifact
         if: always()
