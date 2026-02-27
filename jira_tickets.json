@@ -1,7 +1,7 @@
 {
   "project": {
     "key": "PSV",
-    "name": "PSV"
+    "name": "JiraBoardTestr"
   },
   "components": [
     "BAU-QA",
