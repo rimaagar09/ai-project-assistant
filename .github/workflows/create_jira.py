@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Requests
+      - name: Install Dependencies
         run: pip install requests
 
       - name: Run Jira Script
@@ -25,4 +25,5 @@ jobs:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_ASSIGNEE_ID: "712020:fb42d9ac-78bf-4fc0-87a5-4678f1dd17a0"
         run: python create_jira.py
