@@ -1,7 +1,7 @@
 {
   "project": {
-    "key": "SSP",
-    "name": "SSPToken"
+    "key": "PSV",
+    "name": "PSV"
   },
   "components": [
     "BAU-QA",
